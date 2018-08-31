@@ -1,122 +1,81 @@
-package leescp
+package main
 
-import(
-	"strings"
-    "fmt"
-    "leeconfig"
-    "strconv"
-    "flag"
-    "os"
-    "utils"
+import (
+	"fmt"
 	"io"
+	"os"
 	"path/filepath"
-	"github.com/pkg/sftp"
-	"log"
-	"path"
-) 
+	"strconv"
+	"strings"
+	"utils"
 
-func LeeSftp(){
-	fmt.Println("----------------------------")
-    TOPIC := leeconfig.GetConfig("kcxpservice")
-    ips := TOPIC["ip"]
-    ip_list := strings.Split(ips,",")
-    fmt.Println("ip==", ips)
-    fmt.Println("ip_list==", ip_list)
-    port_int, err := strconv.Atoi(TOPIC["port"])
-    
-    if TOPIC["dpath"] == "" ||  TOPIC["spath"] == ""{
-    	flag.PrintDefaults()
-    	os.Exit(1)
-    }
-    srcFile, err1 := os.Open(TOPIC["spath"])
-    if err1 != nil {
-    	fmt.Println("open file failed:", err1)
-    	os.Exit(1)
-    }
-    defer srcFile.Close()
+	"github.com/Unknwon/goconfig"
+)
 
-    var (
-    	sftpClient *sftp.Client
+func LeeScpExecute(appname string) {
 
-    )
-    var filename = path.Base(TOPIC["spath"])
+	cfg, err := goconfig.LoadConfigFile("config.ini")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	ips, err := cfg.GetValue(appname, "ip")
+	if err != nil {
+		fmt.Println(err)
+	}
+	ip_list := strings.Split(ips, ",")
+	fmt.Println("ip_list==", ip_list)
 
+	port, err := cfg.GetValue(appname, "port")
+	if err != nil {
+		fmt.Println(err)
+	}
+	port_int, _ := strconv.Atoi(port)
 
-    if err == nil {
-    	for _, ip := range ip_list {
-			sftpClient, err = utils.SftpConnect(TOPIC["user"], TOPIC["pwd"], ip, port_int)
+	dpath, _ := cfg.GetValue(appname, "dpath")
+	spath, _ := cfg.GetValue(appname, "spath")
+
+	scp_flag := 1
+	cmd_flag := 1
+
+	if dpath == "" || spath == "" {
+		scp_flag = 0
+	}
+
+	user, _ := cfg.GetValue(appname, "user")
+	pwd, _ := cfg.GetValue(appname, "pwd")
+	cmd, _ := cfg.GetValue(appname, "cmd")
+
+	if cmd == "" {
+		cmd_flag = 0
+	}
+
+	for _, ip := range ip_list {
+		if scp_flag == 1 {
+			File, err := os.Open(spath)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("open file failed:", err)
+				os.Exit(1)
 			}
-			defer sftpClient.Close()
-			dstFile, err := sftpClient.Create(path.Join(TOPIC["dpath"], filename))
-			if err != nil {
-				log.Fatal(err)	
-			}
-			defer dstFile.Close()
-			buf := make([]byte, 1024)
-			for {
-				n, _ := srcFile.Read(buf)
-				if n == 0 {
-					break
-				}
-				dstFile.Write(buf)
-			}
-			fmt.Printf("copy file to remote:%s is finish success.\n", ip)
-			//scp(TOPIC["user"], TOPIC["pwd"], ip, port_int, File, info.Size(), TOPIC["dpath"])
-			utils.RemoteExec(TOPIC["user"], TOPIC["pwd"], ip, TOPIC["cmd"], port_int)
-    	}
-    }
+			info, _ := File.Stat()
+			defer File.Close()
+			fmt.Printf("\r\n---------------%s--------------\r\n", ip)
+			scp(user, pwd, ip, port_int, File, info.Size(), dpath)
+			fmt.Printf("\r\n-------------------------------\r\n")
+		}
+
+		if cmd_flag == 1 {
+			fmt.Printf("\r\n--------------%s---------------\r\n", ip)
+			utils.RemoteExec(user, pwd, ip, cmd, port_int)
+			fmt.Printf("\r\n-------------------------------\r\n")
+		}
+	}
 }
 
-func LeeScpExecute(appname string){
-    TOPIC := leeconfig.GetConfig(appname)
-    ips := TOPIC["ip"]
-    ip_list := strings.Split(ips,",")
-    fmt.Println("ip_list==", ip_list)
-    port_int, _ := strconv.Atoi(TOPIC["port"])
-    
-    if TOPIC["dpath"] == "" ||  TOPIC["spath"] == ""{
-        flag.PrintDefaults()
-        os.Exit(1)
-    }
-    
-    for _, ip := range ip_list {
-		File, err := os.Open(TOPIC["spath"])
-	    if err != nil {
-	        fmt.Println("open file failed:", err)
-	        os.Exit(1)
-	    }
-	    info, _ := File.Stat()
-	    defer File.Close()
-        scp(TOPIC["user"], TOPIC["pwd"], ip, port_int, File, info.Size(), TOPIC["dpath"])
-        utils.RemoteExec(TOPIC["user"], TOPIC["pwd"], ip, TOPIC["cmd"], port_int)
-    }
+func main() {
+	LeeScpExecute("test")
 }
 
-func LeeScp(appname string){
-    TOPIC := leeconfig.GetConfig(appname)
-    ips := TOPIC["ip"]
-    ip_list := strings.Split(ips,",")
-    fmt.Println("ip_list==", ip_list)
-    port_int, _ := strconv.Atoi(TOPIC["port"])
-    
-    if TOPIC["dpath"] == "" ||  TOPIC["spath"] == ""{
-    	flag.PrintDefaults()
-    	os.Exit(1)
-    }
-    	for _, ip := range ip_list {
-		File, err := os.Open(TOPIC["spath"])
-		    if err != nil {
-		        fmt.Println("open file failed:", err)
-		        os.Exit(1)
-		    }
-		    info, _ := File.Stat()
-		    defer File.Close()
-		scp(TOPIC["user"], TOPIC["pwd"], ip, port_int, File, info.Size(), TOPIC["dpath"])
-    	}
-}
-    
 func scp(user, pwd, ip string, port int, File io.Reader, size int64, path string) {
 	fmt.Println("path==", path)
 	filename := filepath.Base(path)
@@ -135,7 +94,7 @@ func scp(user, pwd, ip string, port int, File io.Reader, size int64, path string
 		io.CopyN(w, File, size)
 		fmt.Fprint(w, "\x00")
 		w.Close()
-	} ()
+	}()
 
 	if err := session.Run(fmt.Sprintf("/usr/bin/scp -qrt %s", dirname)); err != nil {
 		fmt.Println("execute scp is failed:", err)
@@ -147,8 +106,8 @@ func scp(user, pwd, ip string, port int, File io.Reader, size int64, path string
 
 	buf, err := session.Output(fmt.Sprintf("/usr/bin/md5sum %s", path))
 	if err != nil {
-			fmt.Println("check md5 is failed:", err)
-			return
+		fmt.Println("check md5 is failed:", err)
+		return
 	}
 	fmt.Printf("%s md5 is:\n%s\n", ip, string(buf))
 }
