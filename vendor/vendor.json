@@ -1,0 +1,41 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "VANlSGxOIkPuvF3dz1oRyt+bDBc=",
+			"path": "github.com/Unknwon/goconfig",
+			"revision": "56bd8ab186196b5203e3b8e17057a04a65153003",
+			"revisionTime": "2018-11-05T21:41:10Z"
+		},
+		{
+			"checksumSHA1": "EpvNqx0QWzG0qXqgOUjhPxYRUpA=",
+			"path": "github.com/kr/fs",
+			"revision": "1455def202f6e05b95cc7bfc7e8ae67ae5141eba",
+			"revisionTime": "2018-05-06T03:17:01Z"
+		},
+		{
+			"checksumSHA1": "k8sIOOWn7dP318jC0zT5D1TJbHM=",
+			"path": "github.com/leeningli/utils",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "DTy0iJ2w5C+FDsN9EnzfhNmvS+o=",
+			"path": "github.com/pkg/errors",
+			"revision": "059132a15dd08d6704c67711dae0cf35ab991756",
+			"revisionTime": "2018-10-23T23:59:46Z"
+		},
+		{
+			"checksumSHA1": "s4CMaRirYhGHfxYn6rFRHMczHaw=",
+			"path": "github.com/pkg/sftp",
+			"revision": "08de04f133f27844173471167014e1a753655ac8",
+			"revisionTime": "2018-09-17T22:22:55Z"
+		},
+		{
+			"checksumSHA1": "whkjo60V0m1pHbP7B4QLVhLPm/0=",
+			"path": "golang.org/x/crypto/ssh",
+			"revision": ""
+		}
+	],
+	"rootPath": "github.com/leeningli/goscp"
+}
