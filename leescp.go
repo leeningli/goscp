@@ -7,50 +7,28 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"github.com/leeningli/utils"
 
 	"github.com/Unknwon/goconfig"
+
+	"github.com/leeningli/utils"
 )
 
-func LeeScpExecute(appname string) {
+var (
+	ips      string
+	ip_list  []string
+	port     string
+	port_int int
+	dpath    string
+	spath    string
+	scp_flag int
+	cmd_flag int
+	user     string
+	pwd      string
+	cmd      string
+)
 
-	cfg, err := goconfig.LoadConfigFile("config.ini")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	ips, err := cfg.GetValue(appname, "ip")
-	if err != nil {
-		fmt.Println(err)
-	}
-	ip_list := strings.Split(ips, ",")
-	fmt.Println("ip_list==", ip_list)
-
-	port, err := cfg.GetValue(appname, "port")
-	if err != nil {
-		fmt.Println(err)
-	}
-	port_int, _ := strconv.Atoi(port)
-
-	dpath, _ := cfg.GetValue(appname, "dpath")
-	spath, _ := cfg.GetValue(appname, "spath")
-
-	scp_flag := 1
-	cmd_flag := 1
-
-	if dpath == "" || spath == "" {
-		scp_flag = 0
-	}
-
-	user, _ := cfg.GetValue(appname, "user")
-	pwd, _ := cfg.GetValue(appname, "pwd")
-	cmd, _ := cfg.GetValue(appname, "cmd")
-
-	if cmd == "" {
-		cmd_flag = 0
-	}
-
-	for _, ip := range ip_list {
+func LeeScpExecute(iplists []string) {
+	for _, ip := range iplists {
 		if scp_flag == 1 {
 			File, err := os.Open(spath)
 			if err != nil {
@@ -72,8 +50,52 @@ func LeeScpExecute(appname string) {
 	}
 }
 
+func loadConfig(appname string) {
+	cfg, err := goconfig.LoadConfigFile("config.ini")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	ips, err = cfg.GetValue(appname, "ip")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	ip_list = strings.Split(ips, ",")
+	fmt.Println("ip_list==", ip_list)
+
+	port, err = cfg.GetValue(appname, "port")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	port_int, _ = strconv.Atoi(port)
+
+	dpath, _ = cfg.GetValue(appname, "dpath")
+	spath, _ = cfg.GetValue(appname, "spath")
+
+	scp_flag = 1
+	cmd_flag = 1
+
+	if dpath == "" || spath == "" {
+		scp_flag = 0
+	}
+
+	user, _ = cfg.GetValue(appname, "user")
+	pwd, _ = cfg.GetValue(appname, "pwd")
+	cmd, _ = cfg.GetValue(appname, "cmd")
+
+	if cmd == "" {
+		cmd_flag = 0
+	}
+}
+
+func init() {
+	loadConfig("test")
+}
+
 func main() {
-	LeeScpExecute("test")
+	LeeScpExecute(ip_list)
 }
 
 func scp(user, pwd, ip string, port int, File io.Reader, size int64, path string) {
